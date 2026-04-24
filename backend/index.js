@@ -46,7 +46,7 @@ function createDeck() {
 }
 
 function shuffle(deck) {
-  const d = [...deck];
+  const d = deck;
   for (let i = d.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [d[i], d[j]] = [d[j], d[i]];
@@ -71,13 +71,24 @@ app.post("/game/start", (req, res) => {
     initial_balance: initial_balance,
     state: GameState.WAITING_FOR_CUT,
   });
+  console.log(sessionGames);
+});
+
+app.get("game/:id/inform", (req, res) => {
+  const { id } = req.body;
+  const sessionGame = sessionGames.find((g) => g.id === id);
+  if (!sessionGame) {
+    return res.status(404).json({ error: "Game not found" });
+  }
+  res.json(sessionGame);
 });
 
 app.post("/game/:game_id/action", (req, res) => {
   const { game_id } = req.params;
-  const { action, amount } = req.body;
+  const { action, action_charge, amount } = req.body;
 
   const sessionGame = sessionGames.find((g) => g.id === game_id);
+  console.log(sessionGame);
   if (!sessionGame) {
     return res.status(404).json({ error: "ERR_SESSION_NOT_FOUND" });
   }
@@ -86,7 +97,7 @@ app.post("/game/:game_id/action", (req, res) => {
     if (action !== "cut") {
       return res.status(400).json({ error: "ERR_INVALID_ACTION" });
     }
-    if (typeof amount !== "number" || amount <= 0) {
+    if (typeof amount !== "number" || amount <= 0 || action_charge > amount) {
       return res.status(400).json({ error: "ERR_INVALID_AMOUNT" });
     }
 
